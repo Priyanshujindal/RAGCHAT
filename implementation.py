@@ -8,9 +8,6 @@ from langchain.chains import LLMChain
 from langchain.schema import Document
 import os
 from dotenv import load_dotenv
-import fitz  # PyMuPDF
-import pytesseract
-from PIL import Image
 # Load environment variables
 load_dotenv()
 
@@ -76,7 +73,7 @@ def query_vector_store(vector_store, query):
     docs_page_content = " ".join([doc.page_content for doc in results])
     
     llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
+        model="gemini-2.0-flash",
         google_api_key=google_api_key
     )
     
