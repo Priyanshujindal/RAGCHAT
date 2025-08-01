@@ -16,18 +16,7 @@ load_dotenv()
 
 def load_documents(file_path: str):
     if file_path.endswith('.pdf'):
-        try:
-            loader = PyPDFLoader(file_path)
-            documents = loader.load()
-            if documents and any(doc.page_content.strip() for doc in documents):
-                return documents
-            else:
-                return load_pdf_with_ocr(file_path)
-        except Exception:
-            try:
-                return load_pdf_alternative(file_path)
-            except Exception:
-                return load_pdf_with_ocr(file_path)
+       loader= PyPDFLoader(file_path)
     elif file_path.endswith('.docx'):
         loader = Docx2txtLoader(file_path)
     elif file_path.endswith('.txt'):
@@ -46,56 +35,6 @@ def load_documents(file_path: str):
         raise ValueError(f"No content found in {file_path}")   
     return documents
 
-def load_pdf_with_ocr(file_path: str):
-    """Load PDF; if text extraction fails, use OCR on pages."""
-    documents = []
-    doc = fitz.open(file_path)
-    for page_num in range(len(doc)):
-        page = doc.load_page(page_num)
-        text = page.get_text("text").strip()
-        if text:
-            documents.append(Document(
-                page_content=text,
-                metadata={"source": file_path, "page": page_num+1}
-            ))
-        else:
-            # No text found, do OCR on page image
-            pix = page.get_pixmap()
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            ocr_text = pytesseract.image_to_string(img).strip()
-            if ocr_text:
-                documents.append(Document(
-                    page_content=ocr_text,
-                    metadata={"source": file_path, "page": page_num+1, "ocr": True}
-                ))
-    if not documents:
-        raise ValueError("No text found in the PDF even after OCR.")
-    return documents
-def load_pdf_alternative(file_path: str):
-    """Alternative PDF loading method"""
-    try:
-        import PyPDF2
-        documents = []
-        
-        with open(file_path, 'rb') as file:
-            pdf_reader = PyPDF2.PdfReader(file)
-            
-            for page_num, page in enumerate(pdf_reader.pages):
-                text = page.extract_text()
-                if text.strip():
-                    documents.append(Document(
-                        page_content=text,
-                        metadata={"source": file_path, "page": page_num + 1}
-                    ))
-        
-        return documents
-    except Exception as e:
-        # If all else fails, create a dummy document
-        return [Document(
-            page_content="PDF content could not be extracted. Please ensure the PDF contains text and is not password protected.",
-            metadata={"source": file_path, "error": str(e)}
-        )]
-        
 def split_documents(documents):
     if not documents:
         raise ValueError("No documents provided to split")
