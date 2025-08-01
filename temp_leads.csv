@@ -1,0 +1,4 @@
+"Name","Email","Phone","Company","Status","Value","Source","Priority","Assigned To"
+"John Smith","john@techcorp.com","+1 234-567-8900","Tech Corp","hot","$5,000","Website","high","Sarah Wilson"
+"Sarah Johnson","sarah@solutions.com","+1 234-567-8901","Tech Solutions","warm","$7,500","LinkedIn","medium","Mike Chen"
+"Mike Chen","mike@digital.com","+1 234-567-8902","Digital Agency","cold","$3,200","Referral","low","David Brown"
