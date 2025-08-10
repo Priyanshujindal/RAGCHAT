@@ -6,7 +6,7 @@ langchain-google-genai>=0.0.5
 
 # Vector databases and embeddings
 sentence-transformers>=2.2.0
-faiss-cpu>=1.7.4
+faiss-cpu>=1.7.4  # Use faiss-gpu if you have CUDA
 
 # Google Gemini integration
 google-generativeai>=0.3.0
@@ -17,9 +17,16 @@ docx2txt>=0.8
 unstructured>=0.12.0
 pandas>=2.0.0
 openpyxl>=3.1.0
+msoffcrypto-tool>=5.3.0  # Required for encrypted Excel files
 
 # Web framework
 streamlit>=1.28.0
 
 # Environment management
 python-dotenv>=1.0.0
+
+# Additional dependencies
+numpy>=1.24.0  # Required by FAISS and sentence-transformers
+tqdm>=4.65.0  # For progress bars in downloads
+torch>=2.0.0  # Required by sentence-transformers
+transformers>=4.30.0  # Required by sentence-transformers
