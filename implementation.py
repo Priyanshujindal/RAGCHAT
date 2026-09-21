@@ -32,6 +32,25 @@ def get_google_api_key() -> str:
 
     return google_api_key
 
+
+def response_content_to_text(content) -> str:
+    """Convert a LangChain response's string or structured content to text."""
+    if isinstance(content, str):
+        return content.strip()
+
+    if isinstance(content, list):
+        text_parts = []
+        for part in content:
+            if isinstance(part, str):
+                text_parts.append(part)
+            elif isinstance(part, dict) and isinstance(part.get("text"), str):
+                text_parts.append(part["text"])
+            elif hasattr(part, "text") and isinstance(part.text, str):
+                text_parts.append(part.text)
+        return "\n".join(text_parts).strip()
+
+    return str(content).strip()
+
 def load_documents(file_path: str) -> List[Document]:
     """
     Load documents from a file with support for multiple formats.
@@ -281,7 +300,7 @@ def query_vector_store(vector_store, query: str) -> str:
         response = chain.invoke({"context": docs_page_content, "question": query})
         
         # Clean up the response
-        return response.content.strip()
+        return response_content_to_text(response.content)
         
     except Exception as e:
         return f"I encountered an error while processing your request: {str(e)}"
