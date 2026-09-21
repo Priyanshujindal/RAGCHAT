@@ -1,17 +1,28 @@
 # Core LangChain components
-from langchain.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader, CSVLoader, UnstructuredExcelLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader, CSVLoader, UnstructuredExcelLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
-from langchain.schema import Document
+from langchain_core.prompts import PromptTemplate
+from langchain_core.documents import Document
 import os
 from typing import List
 from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
+
+
+def get_google_api_key() -> str:
+    """Return a usable Gemini API key or explain how to configure one."""
+    google_api_key = os.getenv("GOOGLE_API_KEY", "").strip()
+    if not google_api_key:
+        raise ValueError(
+            "GOOGLE_API_KEY is not configured. Create a Gemini API key in Google AI Studio "
+            "and set it in .env before submitting a question."
+        )
+
+    return google_api_key
 
 def load_documents(file_path: str) -> List[Document]:
     """
@@ -208,13 +219,11 @@ def query_vector_store(vector_store, query: str) -> str:
     if not query or not query.strip():
         raise ValueError("Query cannot be empty")
         
-    google_api_key = os.getenv("GOOGLE_API_KEY")
-    if not google_api_key:
-        raise ValueError("GOOGLE_API_KEY not found in environment variables")
+    google_api_key = get_google_api_key()
     
     try:
         # Search for relevant document chunks
-        results = vector_store.similarity_search(query=query, k=3)  # Increased to 3 for better context
+        results = vector_store.similarity_search(query=query, k=6)
         if not results:
             return "I couldn't find any relevant information in the documents to answer your question."
             
@@ -226,18 +235,18 @@ def query_vector_store(vector_store, query: str) -> str:
         
         # Initialize the language model
         llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            model="gemini-3.6-flash",
             google_api_key=google_api_key,
             temperature=0.3,  # Lower temperature for more focused answers
-            max_output_tokens=1000
+            max_output_tokens=2048
         )
         
         # Create a more detailed prompt template
         prompt = PromptTemplate(
             input_variables=["context", "question"],
             template="""
-            You are an intelligent document assistant. Use the following context retrieved from the document(s) 
-            to answer the user's question accurately and concisely.
+            You are an intelligent document assistant. Use all relevant context retrieved from the document(s)
+            to answer the user's question accurately and completely.
 
             DOCUMENT CONTEXT:
             {context}
@@ -246,26 +255,25 @@ def query_vector_store(vector_store, query: str) -> str:
 
             INSTRUCTIONS:
             1. Answer based SOLELY on the information provided in the context
-            2. Be accurate, concise, and to the point
+                2. Be accurate and complete. For requests to summarize, provide a structured summary of all
+                    important points in the context, not just an introductory sentence or heading.
             3. If the context doesn't contain enough information to answer the question, 
                say "I cannot find sufficient information in the provided documents to answer this question."
             4. If the question is unclear or too broad, ask for clarification
             5. If referring to specific parts of the document, mention the document number in square brackets (e.g., [Document 1])
             6. If the answer requires combining information from multiple documents, clearly indicate this
+            7. Return the full answer in Markdown and do not stop after a title, heading, or opening sentence.
 
             ANSWER:
             """
         )
         
         # Create and run the LLM chain
-        chain = LLMChain(llm=llm, prompt=prompt)
-        response = chain.run(context=docs_page_content, question=query)
+        chain = prompt | llm
+        response = chain.invoke({"context": docs_page_content, "question": query})
         
         # Clean up the response
-        response = response.strip()
-        response = " ".join(response.split())  # Normalize whitespace
-        
-        return response
+        return response.content.strip()
         
     except Exception as e:
         return f"I encountered an error while processing your request: {str(e)}"
