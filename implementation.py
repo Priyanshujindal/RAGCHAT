@@ -249,8 +249,17 @@ def query_vector_store(vector_store, query: str) -> str:
     google_api_key = get_google_api_key()
     
     try:
-        # Search for relevant document chunks
-        results = vector_store.similarity_search(query=query, k=6)
+        # Summaries need the complete document; ordinary questions use focused retrieval.
+        summary_request = any(
+            phrase in query.lower()
+            for phrase in ("summarize", "summarise", "summary", "overview", "key findings")
+        )
+        document_store = getattr(vector_store, "docstore", None)
+        all_documents = getattr(document_store, "_dict", {})
+        if summary_request and all_documents:
+            results = list(all_documents.values())
+        else:
+            results = vector_store.similarity_search(query=query, k=6)
         if not results:
             return "I couldn't find any relevant information in the documents to answer your question."
             
@@ -265,7 +274,7 @@ def query_vector_store(vector_store, query: str) -> str:
             model="gemini-3.6-flash",
             google_api_key=google_api_key,
             temperature=0.3,  # Lower temperature for more focused answers
-            max_output_tokens=2048
+            max_output_tokens=4096
         )
         
         # Create a more detailed prompt template
