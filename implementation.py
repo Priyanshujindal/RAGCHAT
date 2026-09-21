@@ -9,6 +9,7 @@ from langchain_core.documents import Document
 import os
 from typing import List
 from dotenv import load_dotenv
+
 # Load environment variables
 load_dotenv()
 
@@ -17,9 +18,16 @@ def get_google_api_key() -> str:
     """Return a usable Gemini API key or explain how to configure one."""
     google_api_key = os.getenv("GOOGLE_API_KEY", "").strip()
     if not google_api_key:
+        try:
+            import streamlit as st
+            google_api_key = str(st.secrets.get("GOOGLE_API_KEY", "")).strip()
+        except (ImportError, FileNotFoundError):
+            google_api_key = ""
+
+    if not google_api_key:
         raise ValueError(
-            "GOOGLE_API_KEY is not configured. Create a Gemini API key in Google AI Studio "
-            "and set it in .env before submitting a question."
+            "GOOGLE_API_KEY is not configured. Add it to Streamlit Secrets for deployment "
+            "or set it in .env for local development."
         )
 
     return google_api_key

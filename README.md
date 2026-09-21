@@ -28,14 +28,15 @@ A powerful document question-answering application built with Streamlit, LangCha
 - Google API Key for Gemini AI
 - System dependencies (see above)
 
-Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/app/apikey), then
-put it in the project `.env` file:
+Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/app/apikey). For
+Streamlit Cloud, open **Manage app > Settings > Secrets** and add:
 
-```env
+```toml
 GOOGLE_API_KEY=your_gemini_api_key
 ```
 
-Do not commit `.env` or share the key. If a key has been exposed, revoke it and create a new one.
+For local development, put the same setting in `.env`. Never commit `.env` or share the key.
+If a key has been exposed, revoke it and create a new one.
 
 ## 🛠️ Installation
 
